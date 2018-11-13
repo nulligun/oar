@@ -1,0 +1,8 @@
+{
+  "app": {
+    "key_file": "/etc/ssl/oar.key",
+    "key_algo": "SHA256withRSA",
+    "key_password": null,
+    "port": 8044
+  }
+}
