@@ -3,6 +3,7 @@
     "key_file": "/etc/ssl/oar.key",
     "key_algo": "SHA256withRSA",
     "key_password": null,
-    "port": 8044
+    "port": 8044,
+    "cmc_api_file": "/etc/ssl/oar_cmc.key"
   }
 }
