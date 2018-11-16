@@ -5,16 +5,34 @@ let server = restify.createServer();
 let rsa = require('jsrsasign');
 let fs = require('fs');
 
-let sig = new rsa.Signature({"alg": config.get('app.key_algo')});
+let cmcCache = {};
+let sig = get_signature_object();
+let cmc_api_key = get_cmc_api_key();
 
-let data = '';
-try {
-	data = fs.readFileSync(config.get('app.key_file'), 'utf8');
-} catch(e) {
-	console.log('Error:', e.stack);
+function get_cmc_api_key() {
+	let data = '';
+	try {
+		data = fs.readFileSync(config.get('app.cmc_api_file'), 'utf8');
+	} catch(e) {
+		console.log('Error:', e.stack);
+	}
+	return data.trim();
 }
 
-sig.init(data, config.get('app.key_password'));
+function get_signature_object()
+{
+	let sig = new rsa.Signature({"alg": config.get('app.key_algo')});
+
+	let data = '';
+	try {
+		data = fs.readFileSync(config.get('app.key_file'), 'utf8');
+	} catch(e) {
+		console.log('Error:', e.stack);
+	}
+
+	sig.init(data, config.get('app.key_password'));
+	return sig;
+}
 
 function parse_oa_string(oa_string)
 {
@@ -94,6 +112,39 @@ function oa_sign_result(result)
 	return sigValueHex;
 }
 
+function info(request, response, next) {
+	let symbol = request.body.symbol.toUpperCase();
+	let result = {};
+	let infoWeNeed = [];
+	symbol.split(',').forEach((s) => {
+		if (s in cmcCache) {
+			result[s] = cmcCache[s];
+		} else {
+			infoWeNeed.push(s);
+		}
+	});
+
+	if (infoWeNeed.length > 0) {
+		axios.get('https://pro-api.coinmarketcap.com/v1/cryptocurrency/info', {headers: {'X-CMC_PRO_API_KEY': cmc_api_key}, params: {symbol: infoWeNeed.join()}}).then((res) => {
+			Object.keys(res.data.data).forEach((k) => {
+				result[k] = res.data.data[k];
+				cmcCache[k] = res.data.data[k];
+			});
+			response.send(result);
+			next();
+		}).catch(error => {
+			console.log(error);
+			if (error.response) {
+				console.log(error.response.data);
+			}
+			next();
+		});
+	} else {
+		response.send(result);
+		next();
+	}
+}
+
 function lookup(request, response, next) {
 	let address = request.body.address;
 
@@ -137,6 +188,7 @@ function lookup(request, response, next) {
 
 server.use(restify.plugins.bodyParser());
 server.post('/lookup', lookup);
+server.post('/info', info);
 
 server.listen(config.get("app.port"), function () {
 	console.log('%s listening at %s', server.name, server.url);
