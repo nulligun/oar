@@ -6,7 +6,6 @@ let rsa = require('jsrsasign');
 let fs = require('fs');
 
 let cmcCache = {};
-let sig = get_signature_object();
 let cmc_api_key = get_cmc_api_key();
 
 function get_cmc_api_key() {
@@ -106,6 +105,7 @@ function get_oa_entries(address, records)
 
 function oa_sign_result(result)
 {
+	let sig = get_signature_object();
 	sig.updateString(JSON.stringify(result));
 	let sigValueHex = sig.sign();
 
@@ -125,18 +125,22 @@ function info(request, response, next) {
 	});
 
 	if (infoWeNeed.length > 0) {
-		axios.get('https://pro-api.coinmarketcap.com/v1/cryptocurrency/info', {headers: {'X-CMC_PRO_API_KEY': cmc_api_key}, params: {symbol: infoWeNeed.join()}}).then((res) => {
-			Object.keys(res.data.data).forEach((k) => {
-				result[k] = res.data.data[k];
-				cmcCache[k] = res.data.data[k];
+		let infoPromises = infoWeNeed.map(function(info) {
+			let thisSymbol = info;
+			return new Promise(function(resolve, reject) {
+				axios.get('https://pro-api.coinmarketcap.com/v1/cryptocurrency/info', {headers: {'X-CMC_PRO_API_KEY': cmc_api_key}, params: {symbol: thisSymbol}}).then((res) => {
+					Object.keys(res.data.data).forEach((k) => {
+						result[k] = res.data.data[k];
+						cmcCache[k] = res.data.data[k];
+					});
+					resolve();
+				}).catch(() => {
+					resolve();
+				});
 			});
+		});
+		Promise.all(infoPromises).then(() => {
 			response.send(result);
-			next();
-		}).catch(error => {
-			console.log(error);
-			if (error.response) {
-				console.log(error.response.data);
-			}
 			next();
 		});
 	} else {
@@ -147,8 +151,9 @@ function info(request, response, next) {
 
 function lookup(request, response, next) {
 	let address = request.body.address;
+	let lookupAddress = address.replace("@", ".");
 
-	axios.get('https://dns.google.com/resolve', {params: {name: address, type: 'TXT'}}).then((res) => {
+	axios.get('https://dns.google.com/resolve', {params: {name: lookupAddress, type: 'TXT'}}).then((res) => {
 		let result = {};
 		result['status'] = res.data.Status;
 		if (res.data.Status === 1) {
@@ -172,6 +177,7 @@ function lookup(request, response, next) {
 		} else if (res.data.Status !== 0) {
 			result['message'] = 'Unknown error: ' + res.data.Status;
 		}
+		result['domain'] = address;
 		result['googledns'] = res.data.RD && res.data.RA;
 		result['dnssec_valid'] = res.data.AD;
 
