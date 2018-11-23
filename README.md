@@ -120,7 +120,28 @@ The response body is a json object that is an associative array keyed by coin's 
 }
 ```
 
-## Generate Keys
+
+## Running your own REST api
+
+You can setup your own endpoint so that your client applications make requests to your own hardware. You'll want to add a json config file inside the config/ folder, or just edit the defaults.
+
+```
+{
+  "app": {
+    "key_file": "/etc/ssl/oar.key",
+    "key_algo": "SHA256withRSA",
+    "key_password": null,
+    "port": 8044,
+    "cmc_api_file": "/etc/ssl/oar_cmc.key"
+  }
+}
+```
+
+### CMC API Key
+
+You'll need your own CoinmarketCap api key if you want to use the /info endpoint. Place the key in a file in a secure location where the server will be able to access it. Set the path in your config file to point to the location of this file.
+
+### Generate Keys
 
 If you want to run your own instance of the OpenAlias Rest Api then you need to generate some keys to use.
 
