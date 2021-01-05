@@ -17,7 +17,7 @@
     "@babel/preset-env": "^7.1.5"
   },
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "coinmarketcap-api": "^3.0.0",
     "config": "^2.0.1",
     "jsrsasign": "^8.0.12",
