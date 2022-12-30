@@ -12,14 +12,14 @@
   "license": "ISC",
   "devDependencies": {
     "@babel/cli": "^7.1.2",
-    "@babel/core": "^7.1.2",
+    "@babel/core": "^7.20.7",
     "@babel/node": "^7.0.0",
     "@babel/preset-env": "^7.1.5"
   },
   "dependencies": {
     "axios": "^0.18.0",
     "coinmarketcap-api": "^3.0.0",
-    "config": "^2.0.1",
+    "config": "^3.3.8",
     "jsrsasign": "^8.0.12",
     "restify": "^7.2.2"
   }
